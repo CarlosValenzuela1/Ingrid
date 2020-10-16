@@ -11,13 +11,21 @@ app = Flask(__name__)
 def Main():
 	src = request.args.get('src')
 	list_of_dst = request.args.getlist('dst')
+	if src == None:
+		return {"status":"400", "message":"Please provide the coordinates for your source"}
+	if len(list_of_dst) == 0:
+		return {"status":"400", "message":"Please provide the coordinates for your destination"}
+	print(f"What happened? {src} and {list_of_dst}")
 	routes = prepare_routes(src, list_of_dst)
 
-	resp_dict = {}
-	resp_dict[SOURCE] = src
-	resp_dict[ROUTES] = routes
-	#print(f"Dictionary: {resp_dict}")
-	return resp_dict
+	if type(routes) is list:
+		resp_dict = {}
+		resp_dict[SOURCE] = src
+		resp_dict[ROUTES] = routes
+		#print(f"Dictionary: {resp_dict}")
+		return resp_dict
+	else:
+		return routes
 
 def prepare_routes(src, list_of_dst):
 	""" Return the routes list which contains (destination, duration and distance) 
@@ -28,12 +36,14 @@ def prepare_routes(src, list_of_dst):
 
 		# This will get any route field we want from OSRM API
 		fields = get_fields(src, dst)
-
-		# Using constants to deal with OSRM API fields
-		route_details[DESTINATION] = dst            
-		route_details[DURATION] = fields[DURATION]
-		route_details[DISTANCE] = fields[DISTANCE]
-		routes.append(route_details)
+		if 'status' not in fields:
+			# Using constants to deal with OSRM API fields
+			route_details[DESTINATION] = dst
+			route_details[DURATION] = fields[DURATION]
+			route_details[DISTANCE] = fields[DISTANCE]
+			routes.append(route_details)
+		else:
+			return fields
 
 	# Only sort list if list is bigger than 1
 	if len(routes) > 1:
@@ -49,17 +59,22 @@ def get_fields(src, dst):
 		Details about OSRM API implementation can be seen here: 
 		http://project-osrm.org/docs/v5.23.0/api/?language=cURL#route-service """
 	try:
-		resp = requests.get("http://router.project-osrm.org/route/v1/driving/" + src + ";" + dst + "?overview=false")
+		resp = requests.get("http://router.project-osrm.org/route/v1/driving/" + src + ";" + dst + "?overview=false", timeout=30)
+	# except timeout:
+		# return {"status":"408", "message":"Unable to retrieve response from OSRM API the request timeout, please try again"}
 	except requests.exceptions.RequestException as e:
-		raise SystemExit(e)
+		return {"status":"400", "message":"Connection to OSRM API was unsuccessful, please try again."}
+		#raise SystemExit(e)
 	
-	resp_dict = resp.json()
-	fields = resp_dict[ROUTES][0]
-	return fields
+	if resp.status_code == 200:
+		resp_dict = resp.json()
+		fields = resp_dict[ROUTES][0]
+		return fields
+	else:
+		return {"status":"400", "message":"Connection to OSRM API was unsuccessful, please try again."}
 
 def sort_route_list_by_duration(list_):
 	""" Sorts list using bubble sort algorithm by time (duration) """
-	print(f"sort: {list_}")
 	swapped = True
 	while swapped:
 		swapped = False
