@@ -1,9 +1,9 @@
 import requests
-import constants
+#import constants
 from flask import Flask, request, jsonify
 from flask_restful import Api, Resource, reqparse, abort
 from operator import itemgetter
-from constants import DURATION, DISTANCE, DESTINATION, ROUTES, SOURCE
+from Constants import DURATION, DISTANCE, DESTINATION, ROUTES, SOURCE
 
 app = Flask(__name__)
 
@@ -22,7 +22,6 @@ def Main():
 		resp_dict = {}
 		resp_dict[SOURCE] = src
 		resp_dict[ROUTES] = routes
-		#print(f"Dictionary: {resp_dict}")
 		return resp_dict
 	else:
 		return routes
@@ -60,11 +59,9 @@ def get_fields(src, dst):
 		http://project-osrm.org/docs/v5.23.0/api/?language=cURL#route-service """
 	try:
 		resp = requests.get("http://router.project-osrm.org/route/v1/driving/" + src + ";" + dst + "?overview=false", timeout=30)
-	# except timeout:
-		# return {"status":"408", "message":"Unable to retrieve response from OSRM API the request timeout, please try again"}
+
 	except requests.exceptions.RequestException as e:
 		return {"status":"400", "message":"Connection to OSRM API was unsuccessful, please try again."}
-		#raise SystemExit(e)
 	
 	if resp.status_code == 200:
 		resp_dict = resp.json()

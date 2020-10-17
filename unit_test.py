@@ -1,13 +1,8 @@
 import pytest
 import requests
 import Main
-from constants import BASE
+from Constants import BASE
 
-def test_get_fields():
-    src, dst = "13.388860,52.517037","13.397634,52.529407"
-    expected_result = "{'legs': [{'steps': [], 'weight': 252.7, 'distance': 1884.8, 'summary': '', 'duration': 251.5}], 'weight_name': 'routability', 'weight': 252.7, 'distance': 1884.8, 'duration': 251.5}"
-    result = Main.get_fields(src, dst)
-    assert result == expected_result
 
 def test_prepare_routes():
     src, list_of_dst = "13.388860,52.517037", ["13.397634,52.529407","13.428555,52.523219"]
